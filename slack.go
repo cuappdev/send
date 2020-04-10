@@ -16,7 +16,7 @@ func SendToSlack(message string) {
 		"-H",
 		"'Content-type: application/json'",
 		"--data",
-		messagePayload, 
+		messagePayload,
 		slackHookURL,
 	)
 	_, err := cmd.Output()

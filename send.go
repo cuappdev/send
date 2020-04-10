@@ -15,7 +15,14 @@ func main() {
 				Name:  "login",
 				Usage: "Login to an account",
 				Action: func(c *cli.Context) error {
-					fmt.Println("login was called")
+					username, password := Login()
+					_, success := VerifyUser(username, password)
+					if success {
+						fmt.Println("\nLogin Succeeded")
+						WriteUser(username)
+					} else {
+						fmt.Println("\nUsername doesn't exist or password is incorrect")
+					}
 					return nil
 				},
 			},
@@ -23,7 +30,6 @@ func main() {
 				Name:  "ls",
 				Usage: "List the apps this account has access to",
 				Action: func(c *cli.Context) error {
-					fmt.Println("ls was called")
 					return nil
 				},
 			},
@@ -31,7 +37,9 @@ func main() {
 				Name:  "signup",
 				Usage: "Create an account",
 				Action: func(c *cli.Context) error {
-					fmt.Println("signup was called")
+					username, password := Signup()
+					RegisterUser(username, password)
+					fmt.Println("\nNew user registered with username " + username)
 					return nil
 				},
 			},
@@ -52,13 +60,19 @@ func main() {
 			{
 				Name:      "pull",
 				Usage:     "Pull the config for an app",
-				UsageText: "send pull [APP]",
+				UsageText: "send pull [APP] [DOWNLOAD_PATH]",
 				Action: func(c *cli.Context) error {
-					if c.NArg() < 1 {
-						fmt.Println(`"send pull" requires exactly 1 argument.`)
+					if c.NArg() < 2 {
+						fmt.Println(`"send pull" requires exactly 2 arguments.`)
 						cli.ShowCommandHelp(c, c.Command.Name)
 					} else {
-						fmt.Printf("pull %q was called", c.Args().Get(0))
+						app := c.Args().Get(0)
+						path := c.Args().Get(1)
+
+						success := GetAppConfiguration(app, path)
+						if success {
+							fmt.Printf("Downloaded successfully the configuration for %q", app)
+						}
 					}
 					return nil
 				},
