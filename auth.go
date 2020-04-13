@@ -94,7 +94,7 @@ func GetInstallationToken() string {
 
 func WriteUser(username string) {
 	// Encrypt username
-	signBytes := []byte("passphrasewhichneedstobe32bytes!")
+	signBytes := []byte(os.Getenv("ENCRYPTION_KEY"))
 	c, _ := aes.NewCipher(signBytes)
 	gcm, _ := cipher.NewGCM(c)
 	nonce := make([]byte, gcm.NonceSize())
@@ -112,7 +112,7 @@ func GetCurrentUser() string {
 	}
 
 	// Decrypt username
-	signBytes := []byte("passphrasewhichneedstobe32bytes!")
+	signBytes := []byte(os.Getenv("ENCRYPTION_KEY"))
 	c, _ := aes.NewCipher(signBytes)
 	gcm, _ := cipher.NewGCM(c)
 	nonceSize := gcm.NonceSize()

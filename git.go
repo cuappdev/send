@@ -126,9 +126,5 @@ func VerifyUser(username string, password []byte) (user, bool) {
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), password)
 
-	if err != nil {
-		return user, false
-	}
-
-	return user, true
+	return user, err == nil
 }
