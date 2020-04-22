@@ -113,7 +113,7 @@ func RegisterUser(username string, password string) {
 	performRequest("PUT", contentsLink, b)
 }
 
-func VerifyUser(username string, password []byte) (user, bool) {
+func GetUser(username string) user {
 	fileRes := getFile("users/" + username + ".json")
 
 	var jsonRes map[string]interface{}
@@ -124,6 +124,11 @@ func VerifyUser(username string, password []byte) (user, bool) {
 	user := user{}
 	json.Unmarshal(fileContents, &user)
 
+	return user
+}
+
+func VerifyUser(username string, password []byte) (user, bool) {
+	user := GetUser(username)
 	err := bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), password)
 
 	return user, err == nil

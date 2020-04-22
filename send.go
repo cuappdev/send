@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 )
@@ -30,6 +31,17 @@ func main() {
 				Name:  "ls",
 				Usage: "List the apps this account has access to",
 				Action: func(c *cli.Context) error {
+					username := GetCurrentUser()
+					if username == "" {
+						return cli.Exit("Login required", 1)
+					} else {
+						apps := GetUser(username).Apps
+						if len(apps) == 0 {
+							fmt.Println("You don't have access to any apps.")
+						} else {
+							fmt.Println("You have access to the following apps: " + strings.Join(apps, ", "))
+						}
+					}
 					return nil
 				},
 			},
