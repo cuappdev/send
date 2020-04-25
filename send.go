@@ -28,6 +28,14 @@ func main() {
 				},
 			},
 			{
+				Name:  "logout",
+				Usage: "Logout of your account",
+				Action: func(c *cli.Context) error {
+					ClearCurrentUser()
+					return nil
+				},
+			},
+			{
 				Name:  "ls",
 				Usage: "List the apps this account has access to",
 				Action: func(c *cli.Context) error {
@@ -64,7 +72,15 @@ func main() {
 						fmt.Println(`"send add" requires exactly 2 argument.`)
 						cli.ShowCommandHelp(c, c.Command.Name)
 					} else {
-						fmt.Printf("add %q %q was called", c.Args().Get(0), c.Args().Get(1))
+						username := GetCurrentUser()
+						if GetUser(username).IsAdmin {
+							user := c.Args().Get(0)
+							app := c.Args().Get(0)
+							AddApp(user, app)
+							fmt.Printf("Granted user %s user access to %s\n", user, app)
+						} else {
+							fmt.Println("You do not have admin access.")
+						}
 					}
 					return nil
 				},

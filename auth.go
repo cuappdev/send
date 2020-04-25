@@ -121,3 +121,13 @@ func GetCurrentUser() string {
 
 	return string(plaintext)
 }
+
+func ClearCurrentUser() {
+	err := os.Remove(path.Join(getCredentialsPath(), "user"))
+
+	if os.IsNotExist(err) {
+		fmt.Println("No user is currently logged in")
+	} else {
+		fmt.Println("Successfully logged out")
+	}
+}
