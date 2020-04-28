@@ -111,6 +111,40 @@ func GetAppConfiguration(app string, path string) bool {
 	return true
 }
 
+func PushAppConfiguration(username string, app string, path string) {
+	fileName := filepath.Base(path)
+	gitPath := app + "/docker-compose/" + fileName
+
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	jsonRes := getFile(gitPath)
+	var requestBody fileRequest
+	if jsonRes != nil {
+		requestBody = fileRequest{
+			fmt.Sprintf("%s updated %s for %s", username, fileName, app),
+			base64.StdEncoding.Strict().EncodeToString(data),
+			"master",
+			jsonRes["sha"].(string),
+		}
+	} else {
+		requestBody = fileRequest{
+			fmt.Sprintf("%s added %s for %s", username, fileName, app),
+			base64.StdEncoding.Strict().EncodeToString(data),
+			"master",
+			"",
+		}
+	}
+
+	body, _ := json.Marshal(requestBody)
+
+	contentsLink := baseURL + gitPath
+	performRequest("PUT", contentsLink, body)
+}
+
 func RegisterUser(username string, password string) {
 	contentsLink := baseURL + "users/" + username + ".json"
 
@@ -193,4 +227,10 @@ func AddApp(username string, app string) {
 
 	contentsLink := baseURL + "users/" + username + ".json"
 	performRequest("PUT", contentsLink, body)
+}
+
+func HasAccessTo(username string, app string) bool {
+	user := GetUser(username)
+
+	return contains(user.Apps, app)
 }

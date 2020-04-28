@@ -107,14 +107,26 @@ func main() {
 			},
 			{
 				Name:      "push",
-				Usage:     "Push the config for an app",
-				UsageText: "send push [APP] [CONFIG_PATH]",
+				Usage:     "Push a config file for an app. If the file exists on GitHub, it will be updated according. Otherwise, a new file will be created on GitHub.",
+				UsageText: "send push [APP] [FILE_PATH]",
 				Action: func(c *cli.Context) error {
 					if c.NArg() < 2 {
 						fmt.Println(`"send push" requires exactly 2 arguments.`)
 						cli.ShowCommandHelp(c, c.Command.Name)
 					} else {
-						fmt.Printf("push %q %q was called", c.Args().Get(0), c.Args().Get(1))
+						app := c.Args().Get(0)
+						filePath := c.Args().Get(1)
+						username := GetCurrentUser()
+
+						if username == "" {
+							return cli.Exit("Login required", 1)
+						} else {
+							if HasAccessTo(username, app) {
+								PushAppConfiguration(username, app, filePath)
+							} else {
+								fmt.Println("You don't have access to the specified app.")
+							}
+						}
 					}
 					return nil
 				},

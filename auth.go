@@ -25,7 +25,7 @@ func generateJWTToken() string {
 	signBytes, err := ioutil.ReadFile(os.Getenv("GIT_PEM_KEY_PATH"))
 
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
