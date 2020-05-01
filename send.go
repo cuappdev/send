@@ -140,7 +140,20 @@ func main() {
 						fmt.Println(`"send exec" requires exactly 2 arguments.`)
 						cli.ShowCommandHelp(c, c.Command.Name)
 					} else {
-						fmt.Printf("exec %q %q was called", c.Args().Get(0), c.Args().Get(1))
+						app := c.Args().Get(0)
+						cmd := c.Args().Tail()
+						username := GetCurrentUser()
+
+						if username == "" {
+							return cli.Exit("Login required", 1)
+						} else {
+							if HasAccessTo(username, app) {
+								fmt.Println(ExecCmd(app, strings.Join(cmd, " ")))
+							} else {
+								fmt.Println("You don't have access to the specified app.")
+							}
+						}
+
 					}
 					return nil
 				},

@@ -80,6 +80,41 @@ func getDirectory(path string) []map[string]interface{} {
 	return jsonRes
 }
 
+func downloadFile(file map[string]interface{}, outDir string) bool {
+	if file["download_url"] != nil {
+		downloadLink := file["download_url"].(string)
+		cmd := exec.Command(
+			"curl",
+			"--output",
+			filepath.Join(outDir, file["name"].(string)),
+			"-L",
+			downloadLink,
+		)
+
+		_, err := cmd.Output()
+		if err != nil {
+			fmt.Printf("error occurred downloading the config to %s : %s\n", outDir, err)
+			return false
+		}
+	}
+	return false
+}
+
+func downloadPemKey(app string) {
+	file := getFile(app + "/server.pem")
+	if file == nil {
+		fmt.Printf("error occurred pem key for %s\n", app)
+		return
+	}
+
+	dir, _ := os.UserHomeDir()
+	downloadDir := filepath.Join(dir, ".send", app)
+	os.Mkdir(downloadDir, os.ModePerm)
+
+	downloadFile(file, downloadDir)
+	os.Chmod(filepath.Join(downloadDir, "server.pem"), 0600)
+}
+
 func GetAppConfiguration(app string, path string) bool {
 	jsonRes := getDirectory(app + "/docker-compose")
 	if jsonRes == nil {
@@ -90,21 +125,8 @@ func GetAppConfiguration(app string, path string) bool {
 	os.Mkdir(filepath.Join(path, app), os.ModePerm)
 
 	for _, file := range jsonRes {
-		if file["download_url"] != nil {
-			downloadLink := file["download_url"].(string)
-			cmd := exec.Command(
-				"curl",
-				"--output",
-				filepath.Join(path, app, file["name"].(string)),
-				"-L",
-				downloadLink,
-			)
-
-			_, err := cmd.Output()
-			if err != nil {
-				fmt.Printf("error occurred downloading the config for %s : %s\n", app, err)
-				return false
-			}
+		if !downloadFile(file, filepath.Join(path, app)) {
+			return false
 		}
 	}
 
@@ -233,4 +255,28 @@ func HasAccessTo(username string, app string) bool {
 	user := GetUser(username)
 
 	return contains(user.Apps, app)
+}
+
+func ExecCmd(app string, command string) string {
+	downloadPemKey(app)
+	homeDir, _ := os.UserHomeDir()
+	pemPath := filepath.Join(homeDir, ".send", app, "server.pem")
+
+	cmd := exec.Command(
+		"ssh",
+		"-i",
+		pemPath,
+		fmt.Sprintf("appdev@%s-backend.cornellappdev.com", app),
+		command,
+	)
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("error executing command for %s : %s\n", app, err)
+		os.Exit(1)
+	}
+
+	os.Remove(pemPath)
+
+	return string(output)
 }
