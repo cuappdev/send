@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -59,7 +60,9 @@ func main() {
 				Action: func(c *cli.Context) error {
 					username, password := Signup()
 					RegisterUser(username, password)
+
 					fmt.Println("\nNew user registered with username " + username)
+					SendToSlack(fmt.Sprintf("User %s just signed up.", username))
 					return nil
 				},
 			},
@@ -77,7 +80,9 @@ func main() {
 							user := c.Args().Get(0)
 							app := c.Args().Get(0)
 							AddApp(user, app)
+
 							fmt.Printf("Granted user %s user access to %s\n", user, app)
+							SendToSlack(fmt.Sprintf("User %s granted user %s access to %s.", username, user, app))
 						} else {
 							fmt.Println("You do not have admin access.")
 						}
@@ -123,6 +128,11 @@ func main() {
 						} else {
 							if HasAccessTo(username, app) {
 								PushAppConfiguration(username, app, filePath)
+
+								fileName := filepath.Base(filePath)
+
+								fmt.Println(fmt.Sprintf("Pushed %s for %s", fileName, app))
+								SendToSlack(fmt.Sprintf("User %s pushed %s for %s", username, fileName, app))
 							} else {
 								fmt.Println("You don't have access to the specified app.")
 							}
@@ -154,21 +164,6 @@ func main() {
 							}
 						}
 
-					}
-					return nil
-				},
-			},
-			{
-				Name:      "slack",
-				Usage:     "Send a message to #send-updates channel on Slack",
-				UsageText: "send slack [MESSAGE]",
-				Action: func(c *cli.Context) error {
-					if c.NArg() < 1 {
-						fmt.Println(`"send slack" requires exactly 1 arguments.`)
-						cli.ShowCommandHelp(c, c.Command.Name)
-					} else {
-						SendToSlack(c.Args().Get(0))
-						fmt.Printf("slack %q was called", c.Args().Get(0))
 					}
 					return nil
 				},
