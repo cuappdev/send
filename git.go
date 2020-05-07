@@ -164,7 +164,29 @@ func PushAppConfiguration(username string, app string, path string) {
 	body, _ := json.Marshal(requestBody)
 
 	contentsLink := baseURL + gitPath
-	performRequest("PUT", contentsLink, body)
+	_, statusCode := performRequest("PUT", contentsLink, body)
+
+	if statusCode == 200 || statusCode == 201 {
+		downloadPemKey(app)
+		homeDir, _ := os.UserHomeDir()
+		pemPath := filepath.Join(homeDir, ".send", app, "server.pem")
+
+		cmd := exec.Command(
+			"scp",
+			"-i",
+			pemPath,
+			path,
+			fmt.Sprintf("appdev@%s-backend.cornellappdev.com:docker-compose", app),
+		)
+
+		_, err := cmd.Output()
+		if err != nil {
+			fmt.Printf("Error adding file %s onto %s: %s \n", path, app, err)
+			os.Exit(1)
+		}
+
+		os.Remove(pemPath)
+	}
 }
 
 func RegisterUser(username string, password string) {
