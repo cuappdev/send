@@ -21,6 +21,6 @@ func SendToSlack(message string) {
 	)
 	_, err := cmd.Output()
 	if err != nil {
-		fmt.Println("error occurred sending slack message: %s", err)
+		fmt.Printf("error occurred sending slack message: %s\n", err)
 	}
 }

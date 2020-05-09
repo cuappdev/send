@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/tidwall/gjson"
 )
 
 type credentials struct {
@@ -53,11 +54,10 @@ func requestInstallationToken() string {
 	defer resp.Body.Close()
 	respBody, _ := ioutil.ReadAll(resp.Body)
 
-	var jsonRes map[string]interface{}
-	json.Unmarshal(respBody, &jsonRes)
+	token := gjson.GetBytes(respBody, "token").String()
 
-	writeCredentials(jsonRes["token"].(string), time.Now().Add(time.Hour).Unix())
-	return jsonRes["token"].(string)
+	writeCredentials(token, time.Now().Add(time.Hour).Unix())
+	return token
 }
 
 func getCredentialsPath() string {

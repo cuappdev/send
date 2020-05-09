@@ -105,6 +105,8 @@ func main() {
 						success := GetAppConfiguration(app, path)
 						if success {
 							fmt.Printf("Downloaded successfully the configuration for %q", app)
+						} else {
+							fmt.Printf("Something went wrong while downloading the configuration for %q", app)
 						}
 					}
 					return nil
@@ -164,6 +166,29 @@ func main() {
 							}
 						}
 
+					}
+					return nil
+				},
+			},
+			{
+				Name:      "provision",
+				Usage:     "Creates a new server on DigitalOcean, generates config files, and runs Swarm CLI to setup new server correctly.",
+				UsageText: "send provision [APP]",
+				Action: func(c *cli.Context) error {
+					if c.NArg() < 1 {
+						fmt.Println(`"send provision" requires exactly 1 arguments.`)
+						cli.ShowCommandHelp(c, c.Command.Name)
+					} else {
+						username := GetCurrentUser()
+						app := c.Args().First()
+
+						if GetUser(username).IsAdmin {
+							ProvisionServerForApp(app)
+							AddApp(username, app)
+							SendToSlack(fmt.Sprintf("User %s provisioned a new server for %s.", username, app))
+						} else {
+							fmt.Println("You do not have admin access.")
+						}
 					}
 					return nil
 				},
