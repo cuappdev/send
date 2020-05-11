@@ -208,7 +208,7 @@ func PushAppConfiguration(username string, app string, path string) {
 			"-i",
 			pemPath,
 			path,
-			fmt.Sprintf("appdev@%s-backend.cornellappdev.com:docker-compose", app),
+			fmt.Sprintf("appdev@%s:docker-compose", getHost(app)),
 		)
 
 		_, err := cmd.Output()
@@ -320,7 +320,7 @@ func ExecCmd(app string, command string) string {
 		"ssh",
 		"-i",
 		pemPath,
-		fmt.Sprintf("appdev@%s-backend.cornellappdev.com", app),
+		fmt.Sprintf("appdev@%s", getHost(app)),
 		command,
 	)
 
@@ -333,6 +333,19 @@ func ExecCmd(app string, command string) string {
 	os.Remove(pemPath)
 
 	return string(output)
+}
+
+func getHost(app string) string {
+	fileRes := getFile(app + "/hosts")
+
+	if fileRes == nil {
+		fmt.Println("Could not find specified app or hosts file")
+		os.Exit(1)
+	}
+
+	fileContents, _ := base64.StdEncoding.Strict().DecodeString(fileRes["content"].(string))
+
+	return strings.TrimSpace(strings.Split(string(fileContents), "\n")[1])
 }
 
 func CommitBundle(app string) {
