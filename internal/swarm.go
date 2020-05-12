@@ -12,7 +12,7 @@ import (
 
 var homeDir, _ = os.UserHomeDir()
 
-func ProvisionServerForApp(app string) {
+func ProvisionServerForApp(app string, size string) {
 	fmt.Println("SETTING UP SWARM CLI")
 	setupSwarmCLI()
 
@@ -26,7 +26,7 @@ func ProvisionServerForApp(app string) {
 	generatePemKeys(app)
 
 	fmt.Println("CREATING DROPLET ON DIGITALOCEAN")
-	dropletId := createDroplet(app)
+	dropletId := createDroplet(app, size)
 
 	fmt.Println("WAITING FOR DROPLET TO GET ASSIGNED AN IP ADDRESS")
 	for getDropletStatus(dropletId) != "active" {

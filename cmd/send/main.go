@@ -175,7 +175,12 @@ func main() {
 			{
 				Name:      "provision",
 				Usage:     "Creates a new server on DigitalOcean, generates config files, and runs Swarm CLI to setup new server correctly.",
-				UsageText: "send provision [APP]",
+				UsageText: "send provision [FLAGS] [APP]",
+				Flags: []cli.Flag{&cli.StringFlag{
+					Name:  "size",
+					Value: "s-1vcpu-1gb",
+					Usage: "To specify the size of the DigitalOcean droplet to be created. Valid sizes include: \n\t" + strings.Join(GetValidSizeStrings(), "\n\t"),
+				}},
 				Action: func(c *cli.Context) error {
 					if c.NArg() < 1 {
 						fmt.Println(`"send provision" requires exactly 1 arguments.`)
@@ -185,7 +190,11 @@ func main() {
 						app := c.Args().First()
 
 						if GetUser(username).IsAdmin {
-							ProvisionServerForApp(app)
+							if !IsDropletSizeValid(c.String("size")) {
+								fmt.Println("The specified droplet size is invalid.")
+								cli.ShowCommandHelpAndExit(c, c.Command.Name, 1)
+							}
+							ProvisionServerForApp(app, c.String("size"))
 							AddApp(username, app)
 							SendToSlack(fmt.Sprintf("User %s provisioned a new server for %s.", username, app))
 						} else {
