@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 var client = godo.NewFromToken(os.Getenv("DO_ACCESS_TOKEN"))
 
-func CreateDroplet(name string) int {
+func createDroplet(name string) int {
 	// TODO: Make size configurable
 	createRequest := &godo.DropletCreateRequest{
 		Name:   name,
@@ -69,14 +69,14 @@ func getDroplet(id int) *godo.Droplet {
 	return droplet
 }
 
-func GetDropletIP(id int) string {
+func getDropletIP(id int) string {
 	droplet := getDroplet(id)
 
 	ip, _ := droplet.PublicIPv4()
 	return ip
 }
 
-func GetDropletStatus(id int) string {
+func getDropletStatus(id int) string {
 	droplet := getDroplet(id)
 	return droplet.Status
 }

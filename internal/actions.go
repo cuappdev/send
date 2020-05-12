@@ -1,136 +1,17 @@
-package main
+package internal
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/bcrypt"
 )
-
-const baseURL = "https://github.coecis.cornell.edu/api/v3/repos/cuappdev/send-devops/"
-const contentURL = baseURL + "contents/"
-const gitURL = baseURL + "git/"
-
-type blobRequest struct {
-	Content  string `json:"content"`
-	Encoding string `json:"encoding"`
-}
-
-type commitRequest struct {
-	Message string   `json:"message"`
-	Tree    string   `json:"tree"`
-	Parents []string `json:"parents"`
-}
-
-type referenceRequest struct {
-	SHA string `json:"sha"`
-}
-
-type treeRequest struct {
-	Tree     []tree `json:"tree"`
-	BaseTree string `json:"base_tree"`
-}
-
-type fileRequest struct {
-	Message string `json:"message"`
-	Content string `json:"content"`
-	Branch  string `json:"branch"`
-	SHA     string `json:"sha"`
-}
-
-type tree struct {
-	Path string `json:"path"`
-	Mode string `json:"mode"`
-	Type string `json:"type"`
-	SHA  string `json:"sha"`
-}
-
-type user struct {
-	Username       string   `json:"username"`
-	HashedPassword string   `json:"hashed_password"`
-	Apps           []string `json:"apps"`
-	IsAdmin        bool     `json:"is_admin"`
-}
-
-func performRequest(method string, url string, body []byte) ([]byte, int) {
-	client := &http.Client{}
-	var bodyBuffer io.Reader
-
-	if body == nil {
-		bodyBuffer = nil
-	} else {
-		bodyBuffer = bytes.NewBuffer(body)
-	}
-
-	req, _ := http.NewRequest(method, url, bodyBuffer)
-	req.Header.Set("Authorization", "token "+GetInstallationToken())
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, resp.StatusCode
-	}
-
-	defer resp.Body.Close()
-	respBody, _ := ioutil.ReadAll(resp.Body)
-
-	return respBody, resp.StatusCode
-}
-
-func getContents(path string) []byte {
-	contentsLink := contentURL + path
-	res, statusCode := performRequest("GET", contentsLink, nil)
-
-	if statusCode != 200 {
-		return nil
-	}
-
-	return res
-}
-
-func getFile(path string) map[string]interface{} {
-	var jsonRes map[string]interface{}
-	json.Unmarshal(getContents(path), &jsonRes)
-
-	return jsonRes
-}
-
-func getDirectory(path string) []map[string]interface{} {
-	var jsonRes []map[string]interface{}
-	json.Unmarshal(getContents(path), &jsonRes)
-
-	return jsonRes
-}
-
-func downloadFile(file map[string]interface{}, outDir string) bool {
-	if file["download_url"] != nil {
-		downloadLink := file["download_url"].(string)
-		cmd := exec.Command(
-			"curl",
-			"--output",
-			filepath.Join(outDir, file["name"].(string)),
-			"-L",
-			downloadLink,
-		)
-
-		_, err := cmd.Output()
-		if err != nil {
-			fmt.Printf("error occurred downloading the file %s to %s : %s\n", file["name"].(string), outDir, err)
-			return false
-		}
-		return true
-	}
-	return false
-}
 
 func downloadPemKey(app string) {
 	file := getFile(app + "/server.pem")
@@ -272,15 +153,6 @@ func VerifyUser(username string, password []byte) (user, bool) {
 	return user, err == nil
 }
 
-func contains(list []string, element string) bool {
-	for _, x := range list {
-		if x == element {
-			return true
-		}
-	}
-	return false
-}
-
 func AddApp(username string, app string) {
 	user, sha := getUserAndSHA(username)
 
@@ -348,7 +220,7 @@ func getHost(app string) string {
 	return strings.TrimSpace(strings.Split(string(fileContents), "\n")[1])
 }
 
-func CommitBundle(app string) {
+func commitBundle(app string) {
 	homeDir, _ := os.UserHomeDir()
 	dirPath := filepath.Join(homeDir, ".send", app)
 
@@ -364,78 +236,4 @@ func CommitBundle(app string) {
 		fmt.Println("error updating master with new commit")
 		os.Exit(1)
 	}
-}
-
-func createBlobs(app string, files *[]tree) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-
-		data, err := ioutil.ReadFile(path)
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-		requestBody := blobRequest{
-			base64.StdEncoding.Strict().EncodeToString(data),
-			"base64",
-		}
-		body, _ := json.Marshal(requestBody)
-
-		res, statusCode := performRequest("POST", gitURL+"blobs", body)
-
-		if statusCode != 201 {
-			fmt.Println("error trying to create git blob")
-			os.Exit(1)
-		}
-
-		*files = append(*files, tree{
-			path[strings.LastIndex(path, app):],
-			"100644",
-			"blob",
-			gjson.GetBytes(res, "sha").String(),
-		})
-		return nil
-	}
-}
-
-func createTree(files []tree) string {
-	treeBody, _ := json.Marshal(treeRequest{
-		files,
-		getMasterSHA(),
-	})
-	treeRes, statusCode := performRequest("POST", gitURL+"trees", treeBody)
-	if statusCode != 201 {
-		fmt.Println("error trying to create git tree")
-		os.Exit(1)
-	}
-
-	return gjson.GetBytes(treeRes, "sha").String()
-}
-
-func createCommit(app string, treeSHA string) string {
-	commitBody, _ := json.Marshal(commitRequest{
-		"Add deployment bundle for new app: " + app,
-		treeSHA,
-		[]string{getMasterSHA()},
-	})
-	commitRes, statusCode := performRequest("POST", gitURL+"commits", commitBody)
-	if statusCode != 201 {
-		fmt.Println("error trying to create git commit")
-		os.Exit(1)
-	}
-
-	return gjson.GetBytes(commitRes, "sha").String()
-}
-
-func getMasterSHA() string {
-	res, statusCode := performRequest("GET", baseURL+"branches/master", nil)
-
-	if statusCode != 200 {
-		fmt.Println("error fetching SHA of master")
-		os.Exit(1)
-	}
-
-	return gjson.GetBytes(res, "commit.sha").String()
 }

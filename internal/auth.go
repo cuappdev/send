@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"crypto/aes"
@@ -75,7 +75,7 @@ func writeCredentials(token string, expires_at int64) {
 	_ = ioutil.WriteFile(path.Join(getCredentialsPath(), "credentials.json"), file, 0644)
 }
 
-func GetInstallationToken() string {
+func getInstallationToken() string {
 	file, err := ioutil.ReadFile(path.Join(getCredentialsPath(), "credentials.json"))
 
 	if err != nil {

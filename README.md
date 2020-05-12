@@ -19,7 +19,7 @@ Using [`direnv`](https://direnv.net) is recommended. Otherwise, you need to sour
 ## To run
 After cloning, run
 ```
-go build
+go build ./cmd/send
 ```
 then
 ```

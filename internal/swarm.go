@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -26,16 +26,16 @@ func ProvisionServerForApp(app string) {
 	generatePemKeys(app)
 
 	fmt.Println("CREATING DROPLET ON DIGITALOCEAN")
-	dropletId := CreateDroplet(app)
+	dropletId := createDroplet(app)
 
 	fmt.Println("WAITING FOR DROPLET TO GET ASSIGNED AN IP ADDRESS")
-	for GetDropletStatus(dropletId) != "active" {
+	for getDropletStatus(dropletId) != "active" {
 		time.Sleep(5 * time.Second)
 	}
 
 	fmt.Println("CONSTRUCTING APP BUNDLE FOR SWARM CLI")
-	constructBundle(app, GetDropletIP(dropletId))
-	CommitBundle(app)
+	constructBundle(app, getDropletIP(dropletId))
+	commitBundle(app)
 
 	fmt.Println("WAITING FOR DROPLET TO FINISH INITIALIZING")
 	time.Sleep(30 * time.Second)

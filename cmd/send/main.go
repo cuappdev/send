@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+
+	. "github.com/cuappdev/send/internal"
 )
 
 func main() {

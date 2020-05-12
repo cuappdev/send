@@ -7,7 +7,6 @@
 *.dll
 *.so
 *.dylib
-send
 
 # Test binary, build with `go test -c`
 *.test
