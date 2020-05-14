@@ -80,10 +80,10 @@ func main() {
 						username := GetCurrentUser()
 						if GetUser(username).IsAdmin {
 							user := c.Args().Get(0)
-							app := c.Args().Get(0)
+							app := c.Args().Get(1)
 							AddApp(user, app)
 
-							fmt.Printf("Granted user %s user access to %s\n", user, app)
+							fmt.Printf("Granted user %s access to %s\n", user, app)
 							SendToSlack(fmt.Sprintf("User %s granted user %s access to %s.", username, user, app))
 						} else {
 							fmt.Println("You do not have admin access.")
@@ -94,17 +94,16 @@ func main() {
 			},
 			{
 				Name:      "pull",
-				Usage:     "Pull the config for an app",
-				UsageText: "send pull [APP] [DOWNLOAD_PATH]",
+				Usage:     "Pull the config for an app into the \"config\" directory",
+				UsageText: "send pull [APP]",
 				Action: func(c *cli.Context) error {
-					if c.NArg() < 2 {
-						fmt.Println(`"send pull" requires exactly 2 arguments.`)
+					if c.NArg() < 1 {
+						fmt.Println(`"send pull" requires exactly 1 arguments.`)
 						cli.ShowCommandHelp(c, c.Command.Name)
 					} else {
 						app := c.Args().Get(0)
-						path := c.Args().Get(1)
 
-						success := GetAppConfiguration(app, path)
+						success := GetAppConfiguration(app)
 						if success {
 							fmt.Printf("Downloaded successfully the configuration for %q", app)
 						} else {

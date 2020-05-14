@@ -34,11 +34,14 @@ func ProvisionServerForApp(app string, size string) {
 	}
 
 	fmt.Println("CONSTRUCTING APP BUNDLE FOR SWARM CLI")
-	constructBundle(app, getDropletIP(dropletId))
+	dropletIP := getDropletIP(dropletId)
+	constructBundle(app, dropletIP)
 	commitBundle(app)
 
 	fmt.Println("WAITING FOR DROPLET TO FINISH INITIALIZING")
-	time.Sleep(30 * time.Second)
+	for !isDropletReady(dropletIP) {
+		time.Sleep(5 * time.Second)
+	}
 
 	runSwarmOnServer(app)
 }
@@ -104,6 +107,19 @@ func constructBundle(app string, ip string) {
 		fmt.Printf("Error writing hosts file for %s: %s", app, err)
 		os.Exit(1)
 	}
+}
+
+func isDropletReady(ip string) bool {
+	// Use netcat to see if port 22 (ssh) is open on the given IP address
+	cmd := exec.Command(
+		"nc",
+		"-z",
+		ip,
+		"22",
+	)
+
+	_, err := cmd.Output()
+	return err == nil
 }
 
 func runSwarmOnServer(app string) {

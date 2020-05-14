@@ -83,7 +83,7 @@ func getDirectory(path string) []map[string]interface{} {
 	return jsonRes
 }
 
-func downloadFile(file map[string]interface{}, outDir string) bool {
+func downloadFile(file map[string]interface{}, outDir string) (success bool) {
 	if file["download_url"] != nil {
 		downloadLink := file["download_url"].(string)
 		cmd := exec.Command(
@@ -138,7 +138,7 @@ func createBlobs(app string, files *[]tree) filepath.WalkFunc {
 	}
 }
 
-func createTree(files []tree) string {
+func createTree(files []tree) (treeSHA string) {
 	treeBody, _ := json.Marshal(treeRequest{
 		files,
 		getMasterSHA(),
@@ -152,7 +152,7 @@ func createTree(files []tree) string {
 	return gjson.GetBytes(treeRes, "sha").String()
 }
 
-func createCommit(app string, treeSHA string) string {
+func createCommit(app string, treeSHA string) (commitSHA string) {
 	commitBody, _ := json.Marshal(commitRequest{
 		"Add deployment bundle for new app: " + app,
 		treeSHA,

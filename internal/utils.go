@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func performRequest(method string, url string, body []byte) ([]byte, int) {
+func performRequest(method string, url string, body []byte) (responseBody []byte, statusCode int) {
 	client := &http.Client{}
 	var bodyBuffer io.Reader
 

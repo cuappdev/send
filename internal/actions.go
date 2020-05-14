@@ -28,17 +28,18 @@ func downloadPemKey(app string) {
 	os.Chmod(filepath.Join(downloadDir, "server.pem"), 0600)
 }
 
-func GetAppConfiguration(app string, path string) bool {
+func GetAppConfiguration(app string) (success bool) {
 	jsonRes := getDirectory(app + "/docker-compose")
 	if jsonRes == nil {
 		fmt.Printf("error occurred fetching config for %s\n", app)
 		return false
 	}
 
-	os.Mkdir(filepath.Join(path, app), os.ModePerm)
+	currDir, _ := os.Getwd()
+	os.MkdirAll(filepath.Join(currDir, "config", app), os.ModePerm)
 
 	for _, file := range jsonRes {
-		if !downloadFile(file, filepath.Join(path, app)) {
+		if !downloadFile(file, filepath.Join(currDir, "config", app)) {
 			return false
 		}
 	}
@@ -103,6 +104,11 @@ func PushAppConfiguration(username string, app string, path string) {
 }
 
 func RegisterUser(username string, password string) {
+	if getFile("users/"+username+".json") != nil {
+		fmt.Println("\nUser with provided username already exists.")
+		os.Exit(1)
+	}
+
 	contentsLink := contentURL + "users/" + username + ".json"
 
 	newUser := user{
