@@ -39,6 +39,14 @@ func main() {
 				},
 			},
 			{
+				Name:  "apps",
+				Usage: "List all apps",
+				Action: func(c *cli.Context) error {
+					fmt.Println("All apps: " + strings.Join(GetApps(), ", "))
+					return nil
+				},
+			},
+			{
 				Name:  "ls",
 				Usage: "List the apps this account has access to",
 				Action: func(c *cli.Context) error {
@@ -46,8 +54,11 @@ func main() {
 					if username == "" {
 						return cli.Exit("Login required", 1)
 					} else {
-						apps := GetUser(username).Apps
-						if len(apps) == 0 {
+						user := GetUser(username)
+						apps := user.Apps
+						if user.IsAdmin {
+							fmt.Println("You have access to all apps. Use the \"apps\" command to see all available apps.")
+						} else if len(apps) == 0 {
 							fmt.Println("You don't have access to any apps.")
 						} else {
 							fmt.Println("You have access to the following apps: " + strings.Join(apps, ", "))

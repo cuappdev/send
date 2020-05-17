@@ -186,7 +186,7 @@ func AddApp(username string, app string) {
 func HasAccessTo(username string, app string) bool {
 	user := GetUser(username)
 
-	return contains(user.Apps, app)
+	return user.IsAdmin || contains(user.Apps, app)
 }
 
 func ExecCmd(app string, command string) string {
@@ -242,4 +242,20 @@ func commitBundle(app string) {
 		fmt.Println("error updating master with new commit")
 		os.Exit(1)
 	}
+}
+
+func GetApps() []string {
+	rootDir := getDirectory("/")
+	var apps []string
+
+	for _, content := range rootDir {
+		if content["type"].(string) == "dir" {
+			dirName := content["name"].(string)
+			if dirName != "starter" && dirName != "users" {
+				apps = append(apps, dirName)
+			}
+		}
+	}
+
+	return apps
 }
